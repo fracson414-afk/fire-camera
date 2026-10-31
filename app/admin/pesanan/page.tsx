@@ -50,6 +50,7 @@ export default function AdminPesananPage() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [monthFilter, setMonthFilter] = useState("all");
 
   async function ambilPesanan() {
     setLoading(true);
@@ -89,7 +90,15 @@ export default function AdminPesananPage() {
   useEffect(() => {
     void ambilPesanan();
   }, [router]);
+  const monthOptions = useMemo(() => {
+  const months = pesanan
+    .map((item) => item.created_at?.slice(0, 7))
+    .filter((month): month is string => Boolean(month));
 
+  return [...new Set(months)].sort((a, b) =>
+    b.localeCompare(a)
+  );
+}, [pesanan]);
   const filteredPesanan = useMemo(() => {
     const query = search.trim().toLowerCase();
 
@@ -106,12 +115,16 @@ export default function AdminPesananPage() {
           (detail.camera?.nama ?? "").toLowerCase().includes(query),
         );
 
-      const matchesStatus =
-        statusFilter === "all" || item.status === statusFilter;
+    const matchesStatus =
+  statusFilter === "all" || item.status === statusFilter;
 
-      return matchesSearch && matchesStatus;
+const matchesMonth =
+  monthFilter === "all" ||
+  item.created_at?.slice(0, 7) === monthFilter;
+
+return matchesSearch && matchesStatus && matchesMonth;
     });
-  }, [pesanan, search, statusFilter]);
+  }, [pesanan, search, statusFilter, monthFilter]);
 
   return (
     <main className="min-h-screen bg-black px-4 py-8 text-white md:px-6 lg:px-8">
@@ -155,6 +168,35 @@ export default function AdminPesananPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+
+  {/* FILTER BULAN - TAMBAHAN BARU */}
+  <select
+    value={monthFilter}
+    onChange={(event) => setMonthFilter(event.target.value)}
+    className="rounded-xl border border-gray-700 bg-black px-4 py-2.5 text-sm text-white outline-none focus:border-yellow-400"
+  >
+    <option value="all">Semua Bulan</option>
+
+    {monthOptions.map((month) => (
+      <option key={month} value={month}>
+        {new Date(`${month}-01T00:00:00`).toLocaleDateString(
+          "id-ID",
+          {
+            month: "long",
+            year: "numeric",
+          }
+        )}
+      </option>
+    ))}
+  </select>
+
+  {/* FILTER STATUS - KODE LAMA */}
+  <select
+    value={statusFilter}
+    onChange={(event) => setStatusFilter(event.target.value)}
+    className="rounded-xl border border-gray-700 bg-black px-4 py-2.5 text-sm text-white outline-none focus:border-yellow-400"
+  >
               <select
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value)}
@@ -173,6 +215,7 @@ export default function AdminPesananPage() {
                 onClick={() => {
                   setSearch("");
                   setStatusFilter("all");
+                  setMonthFilter("all");
                 }}
                 className="rounded-xl border border-gray-700 px-4 py-2.5 text-sm text-gray-200 transition hover:border-yellow-400 hover:text-yellow-400"
               >
